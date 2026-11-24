@@ -1,0 +1,38 @@
+name: Security & Session API Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  pytest-security:
+    name: Run Pytest Security Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "garena-bot/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r garena-bot/requirements.txt pytest
+
+      - name: Run Auth & Session Security Pytest Suite
+        run: |
+          pytest garena-bot/tests/test_auth_and_session.py -v
