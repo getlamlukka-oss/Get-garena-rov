@@ -11,13 +11,21 @@ const App = (function () {
   'use strict';
 
   // Config & Endpoints
+  const getApiBase = () => {
+    if (typeof window !== 'undefined' && (window.location.protocol === 'file:' || !window.location.host)) {
+      return 'http://localhost:8000';
+    }
+    return '';
+  };
+
   const CONFIG = {
-    apiActiveJob: '/api/jobs/active',
-    apiStartJob: '/api/jobs/start',
-    apiStopJob: '/api/jobs/stop',
+    apiActiveJob: `${getApiBase()}/api/jobs/active`,
+    apiStartJob: `${getApiBase()}/api/jobs/start`,
+    apiStopJob: `${getApiBase()}/api/jobs/stop`,
     wsUrl: (function () {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host || 'localhost:8000';
+      const isFile = typeof window !== 'undefined' && (window.location.protocol === 'file:' || !window.location.host);
+      const proto = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+      const host = isFile ? 'localhost:8000' : (window.location.host || 'localhost:8000');
       return `${proto}//${host}/ws/status`;
     })(),
     reconnectIntervalMs: 3000,
