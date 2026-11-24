@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+data/active_session.json
+data/sessions/
+data/run_history.json
+.venv/
+venv/
