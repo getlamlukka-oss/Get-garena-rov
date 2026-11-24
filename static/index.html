@@ -1,277 +1,526 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Get-garena-rov — ระบบส่งคำตอบ RoV Academy ครบ 40 บทอัตโนมัติ</title>
+  <title>Garena RoV Academy Auto-Solver v3.0</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+            },
+            arena: {
+              gold: '#ffb800',
+              crimson: '#ff3366',
+              dark: '#0b0f17',
+              card: '#131b26',
+              border: '#223247'
+            }
+          },
+          fontFamily: {
+            sans: ['Kanit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="/static/style.css" />
 </head>
-<body>
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
+<body class="bg-arena-dark text-slate-100 min-h-screen font-sans antialiased selection:bg-brand-500 selection:text-white">
 
-  <div class="app-shell">
-    <!-- Top Header -->
-    <header class="top-header">
-      <div class="brand-group">
-        <div class="brand-emblem">⚔️</div>
+  <!-- Background Decorative Glows -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-arena-gold/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+  <div class="max-w-5xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+
+    <!-- Top App Header -->
+    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-8 border-b border-arena-border gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-amber-400 p-[2px] shadow-lg shadow-cyan-500/20">
+          <div class="w-full h-full bg-arena-card rounded-[10px] flex items-center justify-center text-2xl">
+            ⚔️
+          </div>
+        </div>
         <div>
-          <div class="brand-eyebrow">GARENA ROV ACADEMY · ZERO-AI LOCAL SOLVER v2.0</div>
-          <h1 class="brand-title">Get-Garena-RoV Auto Solver</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">RoV Academy Solver</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded-full">v3.0 Pure HTTP</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400">ระบบส่งคำตอบครบ 40 บท &amp; แลกของรางวัลอัตโนมัติ (Zero-Playwright)</p>
         </div>
       </div>
-      <div class="header-badges">
-        <span class="pill-badge pill-gold" id="vaultCountBadge">⚡ คลังเฉลย 40/40 บทพร้อมใช้งาน</span>
-        <span class="pill-badge pill-status" id="sessionHeaderBadge">🔒 รอเข้าสู่ระบบ</span>
+
+      <!-- Live WebSocket Connection Pill -->
+      <div class="flex items-center gap-3 self-end sm:self-center">
+        <div id="wsBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono bg-slate-900 border border-slate-700 text-slate-400">
+          <span id="wsDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span id="wsText">WS: กำลังเชื่อมต่อ...</span>
+        </div>
       </div>
     </header>
 
-    <!-- 2-Tab Navigation Bar -->
-    <nav class="tab-bar" role="tablist" aria-label="เมนูหลัก">
-      <button
-        type="button"
-        class="tab-btn active"
-        id="tabBtnRun"
-        role="tab"
-        aria-selected="true"
-        data-tab="run"
-      >
-        <span class="tab-icon">🚀</span>
-        <span>แท็บ 1: ล็อกอิน &amp; รันบอทอัตโนมัติ</span>
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        id="tabBtnVault"
-        role="tab"
-        aria-selected="false"
-        data-tab="vault"
-      >
-        <span class="tab-icon">📚</span>
-        <span>แท็บ 2: ประวัติ &amp; รายการเฉลยทั้ง 40 บท</span>
-      </button>
+    <!-- 4-Step Interactive Stepper Navigation -->
+    <nav aria-label="Progress" class="mb-8">
+      <ol class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+        <!-- Step 1 -->
+        <li class="cursor-pointer" onclick="App.goToStep(1)">
+          <div id="stepTab1" class="step-card active flex items-center gap-3 p-3 rounded-xl border border-cyan-500/40 bg-cyan-950/20 transition-all">
+            <span class="step-num flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500 text-slate-950 font-bold text-sm">1</span>
+            <div class="min-w-0">
+              <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">ขั้นตอน 1</p>
+              <p class="text-sm font-semibold truncate text-white">ยืนยันตัวตน (Auth)</p>
+            </div>
+          </div>
+        </li>
+        <!-- Step 2 -->
+        <li class="cursor-pointer" onclick="App.goToStep(2)">
+          <div id="stepTab2" class="step-card flex items-center gap-3 p-3 rounded-xl border border-arena-border bg-arena-card/60 transition-all">
+            <span class="step-num flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400 font-bold text-sm">2</span>
+            <div class="min-w-0">
+              <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">ขั้นตอน 2</p>
+              <p class="text-sm font-semibold truncate text-slate-300">ตั้งค่าบอท (Config)</p>
+            </div>
+          </div>
+        </li>
+        <!-- Step 3 -->
+        <li class="cursor-pointer" onclick="App.goToStep(3)">
+          <div id="stepTab3" class="step-card flex items-center gap-3 p-3 rounded-xl border border-arena-border bg-arena-card/60 transition-all">
+            <span class="step-num flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400 font-bold text-sm">3</span>
+            <div class="min-w-0">
+              <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">ขั้นตอน 3</p>
+              <p class="text-sm font-semibold truncate text-slate-300">แดชบอร์ดสด (Live)</p>
+            </div>
+          </div>
+        </li>
+        <!-- Step 4 -->
+        <li class="cursor-pointer" onclick="App.goToStep(4)">
+          <div id="stepTab4" class="step-card flex items-center gap-3 p-3 rounded-xl border border-arena-border bg-arena-card/60 transition-all">
+            <span class="step-num flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400 font-bold text-sm">4</span>
+            <div class="min-w-0">
+              <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">ขั้นตอน 4</p>
+              <p class="text-sm font-semibold truncate text-slate-300">สรุปผลรางวัล (Result)</p>
+            </div>
+          </div>
+        </li>
+      </ol>
     </nav>
 
-    <!-- ==================== TAB 1: LOGIN & RUN BOT ==================== -->
-    <main id="tabPanelRun" class="tab-panel active" role="tabpanel">
-      <div class="main-grid">
-        <!-- Left Column: Garena Login & Action Card -->
-        <section class="card login-card">
-          <div class="card-header">
+    <!-- Main Container -->
+    <main class="space-y-6">
+
+      <!-- ==================== STEP 1: AUTHENTICATION ==================== -->
+      <section id="step1Panel" class="step-panel space-y-6">
+        <div class="bg-arena-card border border-arena-border rounded-2xl p-6 shadow-xl">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-arena-border">
             <div>
-              <span class="section-tag">STEP 1 · GARENA AUTHENTICATION</span>
-              <h2 class="card-title">เข้าสู่ระบบ &amp; ดึง Token เบื้องหลัง</h2>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>🔐</span> เข้าสู่ระบบ &amp; จัดการบัญชี
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">เลือกเข้าสู่ระบบด้วย Token, ลิงก์ตรง หรืออัปโหลดไฟล์ Vault</p>
             </div>
-            <span class="engine-chip">ไม่ต้องใช้ Gemini API</span>
+            <span class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">สูงสุด 10 บัญชี</span>
           </div>
 
-          <!-- Active Saved Session Banner (shown automatically when session exists) -->
-          <div id="savedSessionBanner" class="saved-session-banner hidden">
-            <div class="saved-session-info">
-              <span class="saved-dot"></span>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left: Direct Token & URL Input -->
+            <div class="space-y-4">
               <div>
-                <div class="saved-title">พบเซสชันที่จำไว้: <strong id="savedAccountName">-</strong></div>
-                <div class="saved-sub" id="savedSessionMeta">พร้อมส่งคำตอบครบ 40 บททันทีโดยไม่ต้องล็อกอินซ้ำ</div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                  วาง Token หรือ ลิงก์ที่มี Token / Code <span class="text-cyan-400">(แนะนำ - ไร้การบล็อก WAF)</span>
+                </label>
+                <textarea
+                  id="authRawToken"
+                  rows="4"
+                  placeholder="วาง JWT Token (eyJ...) หรือ URL เช่น https://academy.rov.in.th/auth/callback/?access_token=... หรือ ?code=..."
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                ></textarea>
+                <p class="text-[11px] text-slate-400 mt-1">💡 วาง token ตัวเดียว หรือวางทั้ง URL ระบบจะแยก access_token / code ให้อัตโนมัติ</p>
               </div>
-            </div>
-            <div class="saved-actions">
-              <button type="button" class="btn-xs btn-outline-danger" id="clearSessionBtn">ล้างเซสชัน</button>
-            </div>
-          </div>
 
-          <form id="solverForm" class="login-form" autocomplete="off">
-            <div class="field-group">
-              <label for="garenaIdInput" class="field-label">Garena ID / Username</label>
-              <div class="input-wrap">
-                <span class="input-icon">👤</span>
-                <input
-                  type="text"
-                  id="garenaIdInput"
-                  class="text-input"
-                  placeholder="กรอก Garena ID หรือ Username ของคุณ"
-                />
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label for="garenaPasswordInput" class="field-label">Garena Password</label>
-              <div class="input-wrap">
-                <span class="input-icon">🔑</span>
-                <input
-                  type="password"
-                  id="garenaPasswordInput"
-                  class="text-input"
-                  placeholder="กรอกรหัสผ่าน Garena (ล็อกอินเบื้องหลังอัตโนมัติ)"
-                />
-                <button type="button" class="icon-action-btn" id="togglePwBtn" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
-              </div>
-            </div>
-
-            <!-- Saved Accounts Quick Chips -->
-            <div id="savedAccountsWrap" class="saved-accounts-wrap hidden">
-              <span class="saved-accounts-label">บัญชีที่บันทึกไว้:</span>
-              <div id="savedAccountsList" class="saved-accounts-list"></div>
-            </div>
-
-            <!-- Collapsible Optional Token Drawer -->
-            <details class="token-drawer" id="tokenDrawer">
-              <summary class="token-drawer-summary">
-                <span>⚡ ตัวเลือกเสริม: วาง JWT Token หรือลิงก์ที่มี Token โดยตรง</span>
-                <span class="token-status-chip" id="tokenCheckChip">ไม่บังคับ</span>
-              </summary>
-              <div class="token-drawer-body">
-                <p class="token-drawer-hint">
-                  หากมี <code>jwt_token</code> หรือก๊อปลิงก์ <code>?token=eyJ...</code> มาแล้ว สามารถวางที่นี่เพื่อให้บอทข้ามขั้นตอนล็อกอินได้ทันที
-                </p>
-                <div class="token-input-row">
-                  <input
-                    type="text"
-                    id="jwtTokenInput"
-                    class="text-input mono-input"
-                    placeholder="วาง eyJ... หรือข้อความที่มี Token ได้เลย ระบบสกัดให้อัตโนมัติ"
-                  />
-                  <button type="button" class="btn-secondary" id="pasteTokenBtn">📋 วาง Token</button>
+              <!-- Username / Password (Optional) -->
+              <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <span class="text-xs font-semibold text-slate-300 block">หรือเข้าสู่ระบบด้วย Garena SSO (ID/Password)</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="text"
+                      id="authGarenaId"
+                      placeholder="Garena ID / อีเมล"
+                      class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="password"
+                      id="authGarenaPw"
+                      placeholder="รหัสผ่าน Garena"
+                      class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
                 </div>
               </div>
-            </details>
+            </div>
 
-            <!-- Alert Banner -->
-            <div id="alertBanner" class="alert-banner hidden"></div>
+            <!-- Right: Vault File Upload & Active Account Preview -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">อัปโหลดไฟล์ accounts_vault.json</label>
+                <div
+                  id="dropzone"
+                  class="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 rounded-xl p-5 text-center bg-slate-900/40 transition-all cursor-pointer"
+                  onclick="document.getElementById('vaultFileInput').click()"
+                >
+                  <input type="file" id="vaultFileInput" accept=".json" class="hidden" onchange="App.handleVaultUpload(event)" />
+                  <div class="text-2xl mb-1">📁</div>
+                  <p class="text-xs font-semibold text-slate-200">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">รองรับไฟล์ accounts_vault.json ที่บันทึกไว้</p>
+                </div>
+              </div>
 
-            <!-- Big Primary CTA Button -->
-            <button type="submit" class="btn-primary-cta" id="runSolverBtn">
-              <span class="cta-icon" id="runBtnIcon">🚀</span>
-              <span id="runBtnText">ล็อกอิน &amp; ส่งคำตอบครบ 40 บททันที</span>
+              <!-- Current Account Card Preview -->
+              <div id="accountPreviewBox" class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-semibold text-slate-400">บัญชีที่พร้อมทำงาน:</span>
+                  <span id="accountStatusPill" class="text-[11px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400">ยังไม่ได้ระบุบัญชี</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-cyan-950 border border-cyan-800 flex items-center justify-center text-lg">
+                    👤
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p id="previewGarenaId" class="text-sm font-bold text-white truncate">-</p>
+                    <p id="previewDetails" class="text-xs text-slate-400 font-mono">Gold: 0 · Silver: 0 · บทที่ผ่าน: 0/40</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 1 Footer Action -->
+          <div class="mt-6 pt-4 border-t border-arena-border flex justify-end">
+            <button
+              type="button"
+              onclick="App.validateAndProceedToStep2()"
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all"
+            >
+              <span>ถัดไป: ตั้งค่าบอท (Config)</span>
+              <span>→</span>
             </button>
-          </form>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <!-- Right Column: Live Progress, Rewards & Stream -->
-        <section class="card dashboard-card">
-          <div class="card-header">
+      <!-- ==================== STEP 2: CONFIGURATION ==================== -->
+      <section id="step2Panel" class="step-panel hidden space-y-6">
+        <div class="bg-arena-card border border-arena-border rounded-2xl p-6 shadow-xl">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-arena-border">
             <div>
-              <span class="section-tag">STEP 2 · REAL-TIME REWARD MONITOR</span>
-              <h2 class="card-title">สถานะการส่งคำตอบ &amp; รางวัลที่ได้รับ</h2>
-            </div>
-            <span class="live-indicator" id="liveRunBadge">พร้อมทำงาน</span>
-          </div>
-
-          <!-- 4 KPI Reward Cards -->
-          <div class="kpi-grid">
-            <div class="kpi-box kpi-gold">
-              <div class="kpi-label">🪙 GOLD ที่ได้รับรอบนี้</div>
-              <div class="kpi-value" id="statGold">+0</div>
-              <div class="kpi-sub">รวมในบัญชี: <strong id="statTotalGold">0</strong> Gold</div>
-            </div>
-            <div class="kpi-box kpi-silver">
-              <div class="kpi-label">🥈 SILVER ที่ได้รับรอบนี้</div>
-              <div class="kpi-value" id="statSilver">+0</div>
-              <div class="kpi-sub">รวมในบัญชี: <strong id="statTotalSilver">0</strong> Silver</div>
-            </div>
-            <div class="kpi-box kpi-chapters">
-              <div class="kpi-label">✅ บทเรียนที่ผ่านรวม</div>
-              <div class="kpi-value" id="statPassed">0 / 40</div>
-              <div class="kpi-sub" id="statBreakdown">ผ่านเพิ่ม 0 · เคยผ่านแล้ว 0</div>
-            </div>
-            <div class="kpi-box kpi-engine">
-              <div class="kpi-label">🧠 ระบบประมวลผล</div>
-              <div class="kpi-value kpi-value-sm">Local 100%</div>
-              <div class="kpi-sub">เฉลยแท้ 40 บท · ไร้โควตา AI</div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>⚙️</span> การตั้งค่าบอท &amp; เครือข่าย (Bot Configuration)
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">กำหนดค่าความปลอดภัย Proxy และระบบแลกของรางวัลอัตโนมัติ</p>
             </div>
           </div>
 
-          <!-- 4-Step Pipeline Indicator -->
-          <div class="pipeline-steps" id="pipelineSteps">
-            <div class="pipe-step" data-phase="auth">1. ล็อกอิน &amp; ดึง Token</div>
-            <div class="pipe-step" data-phase="info">2. โหลดโจทย์ 40 บท</div>
-            <div class="pipe-step" data-phase="answer">3. ส่งคำตอบอัตโนมัติ</div>
-            <div class="pipe-step" data-phase="completed">4. รับรางวัลสำเร็จ</div>
-          </div>
-
-          <!-- Animated Progress Bar -->
-          <div class="progress-block">
-            <div class="progress-meta">
-              <span id="progressStatusText">กรอก Garena ID &amp; Password แล้วกดปุ่มเริ่มทำงานได้เลย</span>
-              <span id="progressPercentText" class="mono-text">0%</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" id="progressBarFill" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <!-- Live Solved Chapters Stream -->
-          <div class="stream-split">
-            <div class="stream-panel">
-              <div class="panel-bar">
-                <span>🏆 บทเรียนที่ส่งคำตอบผ่านล่าสุด</span>
-                <span class="panel-count" id="solvedFeedCount">0 บท</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left: Auto-Redeem Preferences -->
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label for="cfgAutoRedeem" class="text-sm font-bold text-white block cursor-pointer">🎁 ระบบแลกของรางวัลอัตโนมัติ (Auto-Redeem)</label>
+                    <p class="text-xs text-slate-400">แลกของรางวัลทันทีเมื่อทำข้อสอบจบและแต้ม Gold/Silver เพียงพอ</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="cfgAutoRedeem"
+                    checked
+                    class="w-5 h-5 accent-cyan-500 rounded cursor-pointer"
+                  />
+                </div>
               </div>
-              <div class="chapter-feed" id="liveChapterList">
-                <div class="empty-feed">เมื่อเริ่มรัน รายการบทเรียนและรางวัล Gold / Silver แต่ละบทจะแสดงแบบเรียลไทม์ที่นี่</div>
+
+              <!-- Preferred Items -->
+              <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                <span class="text-xs font-semibold text-slate-300 block">ลำดับความสำคัญของรางวัล:</span>
+                <div class="space-y-2 text-xs text-slate-300">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="rwSkin" checked class="accent-cyan-500" />
+                    <span>สกินถาวร / กล่องเลือกสกิน (Skin Chest)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="rwCrystal" checked class="accent-cyan-500" />
+                    <span>เมจิกคริสตัล (Magic Crystal)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="rwTicket" checked class="accent-cyan-500" />
+                    <span>บัตรเชิญสุ่ม / ตั๋วสุ่มพิเศษ</span>
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div class="stream-panel">
-              <div class="panel-bar">
-                <span>📡 บันทึกการทำงานสด (Live Log)</span>
-                <button type="button" class="btn-xs btn-ghost" id="clearLogBtn">ล้างบันทึก</button>
+            <!-- Right: Network & Proxy Configuration -->
+            <div class="space-y-4">
+              <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <label class="block text-xs font-semibold text-slate-300">
+                  Proxy สำหรับยิงคำขอ (ทางเลือก)
+                </label>
+                <input
+                  type="text"
+                  id="cfgProxy"
+                  placeholder="http://user:pass@ip:port หรือ socks5://ip:port"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                />
+                <p class="text-[11px] text-slate-400">หากปล่อยว่าง ระบบจะเชื่อมต่อโดยตรงผ่าน Zero-Playwright HTTP Engine</p>
               </div>
-              <div class="console-box" id="consoleBox">
-                <div class="log-row log-info">[พร้อมทำงาน] ระบบเฉลยในตัวครบ 40 บท + Local Adaptive Solver พร้อมส่งคำตอบทันที</div>
+
+              <!-- Rate Limiting Notice -->
+              <div class="p-4 rounded-xl bg-cyan-950/30 border border-cyan-800/40 text-xs space-y-1.5">
+                <div class="flex items-center gap-2 text-cyan-400 font-semibold">
+                  <span>🛡️</span>
+                  <span>ระบบควบคุมอัตราการยิง (Built-in Rate Limiter)</span>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                  เซิร์ฟเวอร์เปิดใช้งาน Token-Bucket RPS (4.0 req/s) และ Exponential Backoff หากตรวจพบ HTTP 429 ระบบจะหน่วงเวลาอัตโนมัติเพื่อความปลอดภัยของบัญชี
+                </p>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+
+          <!-- Step 2 Footer Navigation -->
+          <div class="mt-6 pt-4 border-t border-arena-border flex items-center justify-between">
+            <button
+              type="button"
+              onclick="App.goToStep(1)"
+              class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+            >
+              ← ย้อนกลับ
+            </button>
+            <button
+              type="button"
+              onclick="App.goToStep(3)"
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all"
+            >
+              <span>ถัดไป: แดชบอร์ดสด (Live Dashboard)</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 3: LIVE DASHBOARD ==================== -->
+      <section id="step3Panel" class="step-panel hidden space-y-6">
+
+        <!-- WAF Blocked Alert Banner (Hidden by default) -->
+        <div id="wafAlertBanner" class="hidden p-4 rounded-2xl bg-rose-950/80 border border-rose-700 shadow-xl shadow-rose-950/40 text-rose-200 space-y-2">
+          <div class="flex items-center gap-2 text-rose-300 font-bold text-sm">
+            <span>🚨</span>
+            <span id="wafAlertTitle">ตรวจพบระบบความปลอดภัย Garena DataDome (HTTP 403)</span>
+          </div>
+          <p id="wafAlertMsg" class="text-xs text-rose-200/90 leading-relaxed">
+            ระบบความปลอดภัยของ Garena บล็อกการเข้าถึงอัตโนมัติ กรุณากดไปที่ "ขั้นตอน 1" แล้วคัดลอก Token หรือลิงก์จากหน้าเบราว์เซอร์มาวางโดยตรงเพื่อทำงานต่อทันที
+          </p>
+          <div class="pt-1">
+            <button
+              type="button"
+              onclick="App.goToStep(1)"
+              class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold"
+            >
+              สลับไปหน้าใส่ Token
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry & Action Bar -->
+        <div class="bg-arena-card border border-arena-border rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-arena-border">
+            <div>
+              <span id="jobRefBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">#STANDBY</span>
+              <h2 id="jobStatusHeader" class="text-lg font-bold text-white mt-1">สถานะ: พร้อมเริ่มงาน</h2>
+            </div>
+
+            <!-- Start / Stop Controls -->
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                id="btnStartJob"
+                onclick="App.startJob()"
+                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <span>▶</span>
+                <span>เริ่มทำงาน (Start)</span>
+              </button>
+              <button
+                type="button"
+                id="btnStopJob"
+                onclick="App.stopJob()"
+                disabled
+                class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-rose-600/20 transition-all opacity-40 cursor-not-allowed"
+              >
+                <span>■</span>
+                <span>หยุดงาน (Stop)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress Bar & Percentage -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span id="progressLabel" class="text-slate-300 font-medium">ความคืบหน้าภาพรวม (0%)</span>
+              <span id="progressPercent" class="text-cyan-400 font-mono font-bold">0%</span>
+            </div>
+            <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+              <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-500 to-amber-400 rounded-full transition-all duration-300 w-0"></div>
+            </div>
+          </div>
+
+          <!-- Active Question & Chapter Card -->
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-cyan-400 font-semibold flex items-center gap-1.5">
+                <span>📖</span>
+                <span id="currentChapterTitle">บทที่กำลังทำ: รอเริ่มงาน</span>
+              </span>
+              <span id="currentQuestionIndex" class="font-mono text-slate-400">ข้อที่ 0/0</span>
+            </div>
+            <div id="currentQuestionText" class="text-sm font-medium text-slate-100 min-h-[2.5rem] flex items-center">
+              กดปุ่ม "เริ่มทำงาน" เพื่อให้ระบบส่งคำตอบครบ 40 บทเรียนโดยอัตโนมัติ
+            </div>
+            <div id="currentChoicesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <!-- Choices populated dynamically via WebSocket -->
+            </div>
+          </div>
+
+          <!-- Live Log Console Box -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="flex items-center gap-1.5">
+                <span>💻</span>
+                <span>บันทึกการทำงานแบบเรียลไทม์ (Live Logs)</span>
+              </span>
+              <button type="button" onclick="App.clearLogs()" class="hover:text-slate-200">เคลียร์บันทึก</button>
+            </div>
+            <div
+              id="liveLogBox"
+              class="w-full h-44 bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-slate-300 overflow-y-auto space-y-1"
+            >
+              <div class="text-slate-500">[SYSTEM] พร้อมเชื่อมต่อ WebSocket และรอคำสั่งทำงาน...</div>
+            </div>
+          </div>
+
+          <!-- Step 3 Footer Navigation -->
+          <div class="pt-4 border-t border-arena-border flex items-center justify-between">
+            <button
+              type="button"
+              onclick="App.goToStep(2)"
+              class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+            >
+              ← ย้อนกลับ
+            </button>
+            <button
+              type="button"
+              onclick="App.goToStep(4)"
+              class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+            >
+              ดูหน้าสรุปผล (Results) →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== STEP 4: RESULTS ==================== -->
+      <section id="step4Panel" class="step-panel hidden space-y-6">
+        <div class="bg-arena-card border border-arena-border rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="pb-4 border-b border-arena-border flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>🏆</span> สรุปผลการทำงาน &amp; ของรางวัล (Summary &amp; Rewards)
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">ภาพรวมผลการทำแบบทดสอบและการแลกของรางวัล</p>
+            </div>
+            <span id="finalJobStatusBadge" class="text-xs px-2.5 py-1 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+              เสร็จสมบูรณ์
+            </span>
+          </div>
+
+          <!-- Key Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block mb-1">บทเรียนที่ผ่าน</span>
+              <span id="sumPassedChapters" class="text-xl font-bold font-mono text-cyan-400">40 / 40</span>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block mb-1">คำถามที่ตอบ</span>
+              <span id="sumTotalQuestions" class="text-xl font-bold font-mono text-white">183</span>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block mb-1">Gold ที่ได้รับ</span>
+              <span id="sumGoldEarned" class="text-xl font-bold font-mono text-arena-gold">+1,200</span>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+              <span class="text-xs text-slate-400 block mb-1">ของรางวัลที่แลก</span>
+              <span id="sumRedeemedCount" class="text-xl font-bold font-mono text-emerald-400">0</span>
+            </div>
+          </div>
+
+          <!-- Redeemed Rewards Table / List -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold text-slate-300">รายการของรางวัลที่แลกสำเร็จ:</h3>
+            <div id="redeemedItemsList" class="space-y-2">
+              <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-xs text-slate-500">
+                ยังไม่มีรายการของรางวัลที่แลก (หรือตั้งค่าปิด Auto-Redeem)
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 Actions -->
+          <div class="pt-4 border-t border-arena-border flex items-center justify-between">
+            <button
+              type="button"
+              onclick="App.goToStep(1)"
+              class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+            >
+              🔄 เริ่มรอบใหม่ / เปลี่ยนบัญชี
+            </button>
+            <button
+              type="button"
+              onclick="App.goToStep(3)"
+              class="px-4 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 border border-cyan-800 text-cyan-300 text-xs font-semibold transition-all"
+            >
+              กลับไปดูแดชบอร์ดสด →
+            </button>
+          </div>
+        </div>
+      </section>
+
     </main>
 
-    <!-- ==================== TAB 2: HISTORY & 40-CHAPTER VAULT ==================== -->
-    <section id="tabPanelVault" class="tab-panel hidden" role="tabpanel">
-      <!-- Run History & CSV Export Card -->
-      <div class="card history-card">
-        <div class="card-header" style="flex-wrap: wrap;">
-          <div>
-            <span class="section-tag">RUN HISTORY &amp; CSV BLUEPRINT EXPORT</span>
-            <h2 class="card-title">ประวัติการส่งคำตอบ &amp; ดาวน์โหลดสรุประบบ (.csv)</h2>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="/api/export/system-csv" class="btn-secondary" style="text-decoration: none;">📥 ดาวน์โหลดสรุประบบ (.csv)</a>
-            <a href="/api/export/answers-csv" class="btn-secondary" style="text-decoration: none;">📥 ดาวน์โหลดเฉลย 40 บท (.csv)</a>
-            <button type="button" class="btn-secondary btn-sm" id="refreshHistoryBtn">🔄 รีเฟรชข้อมูล</button>
-          </div>
-        </div>
-        <div id="historyList" class="history-list">
-          <div class="empty-feed">ยังไม่มีประวัติการรันในเซสชันนี้</div>
-        </div>
-      </div>
+    <!-- Global Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-      <!-- 40-Chapter Verified Answer Vault Card -->
-      <div class="card vault-card">
-        <div class="card-header vault-header">
-          <div>
-            <span class="section-tag">VERIFIED 40-CHAPTER DATABASE</span>
-            <h2 class="card-title">คลังเฉลย RoV Academy ทั้ง 40 บท (ยืนยันจากเซิร์ฟเวอร์ 100%)</h2>
-          </div>
-          <div class="vault-search-wrap">
-            <span class="search-icon">🔍</span>
-            <input
-              type="search"
-              id="vaultSearchInput"
-              class="text-input search-input"
-              placeholder="ค้นหาเลขบท (เช่น 30, 46, 70), คำถาม หรือคำตอบ..."
-            />
-          </div>
-        </div>
-        <div id="vaultList" class="vault-grid">
-          <div class="empty-feed">กำลังโหลดคลังเฉลยทั้ง 40 บท...</div>
-        </div>
-      </div>
-    </section>
   </div>
 
+  <!-- Application Script -->
   <script src="/static/app.js"></script>
 </body>
 </html>
