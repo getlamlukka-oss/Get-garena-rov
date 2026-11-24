@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get-garena-rov — ระบบส่งคำตอบ RoV Academy ครบ 40 บทอัตโนมัติ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="brand-group">
+        <div class="brand-emblem">⚔️</div>
+        <div>
+          <div class="brand-eyebrow">GARENA ROV ACADEMY · ZERO-AI LOCAL SOLVER v2.0</div>
+          <h1 class="brand-title">Get-Garena-RoV Auto Solver</h1>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="pill-badge pill-gold" id="vaultCountBadge">⚡ คลังเฉลย 40/40 บทพร้อมใช้งาน</span>
+        <span class="pill-badge pill-status" id="sessionHeaderBadge">🔒 รอเข้าสู่ระบบ</span>
+      </div>
+    </header>
+
+    <!-- 2-Tab Navigation Bar -->
+    <nav class="tab-bar" role="tablist" aria-label="เมนูหลัก">
+      <button
+        type="button"
+        class="tab-btn active"
+        id="tabBtnRun"
+        role="tab"
+        aria-selected="true"
+        data-tab="run"
+      >
+        <span class="tab-icon">🚀</span>
+        <span>แท็บ 1: ล็อกอิน &amp; รันบอทอัตโนมัติ</span>
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        id="tabBtnVault"
+        role="tab"
+        aria-selected="false"
+        data-tab="vault"
+      >
+        <span class="tab-icon">📚</span>
+        <span>แท็บ 2: ประวัติ &amp; รายการเฉลยทั้ง 40 บท</span>
+      </button>
+    </nav>
+
+    <!-- ==================== TAB 1: LOGIN & RUN BOT ==================== -->
+    <main id="tabPanelRun" class="tab-panel active" role="tabpanel">
+      <div class="main-grid">
+        <!-- Left Column: Garena Login & Action Card -->
+        <section class="card login-card">
+          <div class="card-header">
+            <div>
+              <span class="section-tag">STEP 1 · GARENA AUTHENTICATION</span>
+              <h2 class="card-title">เข้าสู่ระบบ &amp; ดึง Token เบื้องหลัง</h2>
+            </div>
+            <span class="engine-chip">ไม่ต้องใช้ Gemini API</span>
+          </div>
+
+          <!-- Active Saved Session Banner (shown automatically when session exists) -->
+          <div id="savedSessionBanner" class="saved-session-banner hidden">
+            <div class="saved-session-info">
+              <span class="saved-dot"></span>
+              <div>
+                <div class="saved-title">พบเซสชันที่จำไว้: <strong id="savedAccountName">-</strong></div>
+                <div class="saved-sub" id="savedSessionMeta">พร้อมส่งคำตอบครบ 40 บททันทีโดยไม่ต้องล็อกอินซ้ำ</div>
+              </div>
+            </div>
+            <div class="saved-actions">
+              <button type="button" class="btn-xs btn-outline-danger" id="clearSessionBtn">ล้างเซสชัน</button>
+            </div>
+          </div>
+
+          <form id="solverForm" class="login-form" autocomplete="off">
+            <div class="field-group">
+              <label for="garenaIdInput" class="field-label">Garena ID / Username</label>
+              <div class="input-wrap">
+                <span class="input-icon">👤</span>
+                <input
+                  type="text"
+                  id="garenaIdInput"
+                  class="text-input"
+                  placeholder="กรอก Garena ID หรือ Username ของคุณ"
+                />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="garenaPasswordInput" class="field-label">Garena Password</label>
+              <div class="input-wrap">
+                <span class="input-icon">🔑</span>
+                <input
+                  type="password"
+                  id="garenaPasswordInput"
+                  class="text-input"
+                  placeholder="กรอกรหัสผ่าน Garena (ล็อกอินเบื้องหลังอัตโนมัติ)"
+                />
+                <button type="button" class="icon-action-btn" id="togglePwBtn" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+              </div>
+            </div>
+
+            <!-- Saved Accounts Quick Chips -->
+            <div id="savedAccountsWrap" class="saved-accounts-wrap hidden">
+              <span class="saved-accounts-label">บัญชีที่บันทึกไว้:</span>
+              <div id="savedAccountsList" class="saved-accounts-list"></div>
+            </div>
+
+            <!-- Collapsible Optional Token Drawer -->
+            <details class="token-drawer" id="tokenDrawer">
+              <summary class="token-drawer-summary">
+                <span>⚡ ตัวเลือกเสริม: วาง JWT Token หรือลิงก์ที่มี Token โดยตรง</span>
+                <span class="token-status-chip" id="tokenCheckChip">ไม่บังคับ</span>
+              </summary>
+              <div class="token-drawer-body">
+                <p class="token-drawer-hint">
+                  หากมี <code>jwt_token</code> หรือก๊อปลิงก์ <code>?token=eyJ...</code> มาแล้ว สามารถวางที่นี่เพื่อให้บอทข้ามขั้นตอนล็อกอินได้ทันที
+                </p>
+                <div class="token-input-row">
+                  <input
+                    type="text"
+                    id="jwtTokenInput"
+                    class="text-input mono-input"
+                    placeholder="วาง eyJ... หรือข้อความที่มี Token ได้เลย ระบบสกัดให้อัตโนมัติ"
+                  />
+                  <button type="button" class="btn-secondary" id="pasteTokenBtn">📋 วาง Token</button>
+                </div>
+              </div>
+            </details>
+
+            <!-- Alert Banner -->
+            <div id="alertBanner" class="alert-banner hidden"></div>
+
+            <!-- Big Primary CTA Button -->
+            <button type="submit" class="btn-primary-cta" id="runSolverBtn">
+              <span class="cta-icon" id="runBtnIcon">🚀</span>
+              <span id="runBtnText">ล็อกอิน &amp; ส่งคำตอบครบ 40 บททันที</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Right Column: Live Progress, Rewards & Stream -->
+        <section class="card dashboard-card">
+          <div class="card-header">
+            <div>
+              <span class="section-tag">STEP 2 · REAL-TIME REWARD MONITOR</span>
+              <h2 class="card-title">สถานะการส่งคำตอบ &amp; รางวัลที่ได้รับ</h2>
+            </div>
+            <span class="live-indicator" id="liveRunBadge">พร้อมทำงาน</span>
+          </div>
+
+          <!-- 4 KPI Reward Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-box kpi-gold">
+              <div class="kpi-label">🪙 GOLD ที่ได้รับรอบนี้</div>
+              <div class="kpi-value" id="statGold">+0</div>
+              <div class="kpi-sub">รวมในบัญชี: <strong id="statTotalGold">0</strong> Gold</div>
+            </div>
+            <div class="kpi-box kpi-silver">
+              <div class="kpi-label">🥈 SILVER ที่ได้รับรอบนี้</div>
+              <div class="kpi-value" id="statSilver">+0</div>
+              <div class="kpi-sub">รวมในบัญชี: <strong id="statTotalSilver">0</strong> Silver</div>
+            </div>
+            <div class="kpi-box kpi-chapters">
+              <div class="kpi-label">✅ บทเรียนที่ผ่านรวม</div>
+              <div class="kpi-value" id="statPassed">0 / 40</div>
+              <div class="kpi-sub" id="statBreakdown">ผ่านเพิ่ม 0 · เคยผ่านแล้ว 0</div>
+            </div>
+            <div class="kpi-box kpi-engine">
+              <div class="kpi-label">🧠 ระบบประมวลผล</div>
+              <div class="kpi-value kpi-value-sm">Local 100%</div>
+              <div class="kpi-sub">เฉลยแท้ 40 บท · ไร้โควตา AI</div>
+            </div>
+          </div>
+
+          <!-- 4-Step Pipeline Indicator -->
+          <div class="pipeline-steps" id="pipelineSteps">
+            <div class="pipe-step" data-phase="auth">1. ล็อกอิน &amp; ดึง Token</div>
+            <div class="pipe-step" data-phase="info">2. โหลดโจทย์ 40 บท</div>
+            <div class="pipe-step" data-phase="answer">3. ส่งคำตอบอัตโนมัติ</div>
+            <div class="pipe-step" data-phase="completed">4. รับรางวัลสำเร็จ</div>
+          </div>
+
+          <!-- Animated Progress Bar -->
+          <div class="progress-block">
+            <div class="progress-meta">
+              <span id="progressStatusText">กรอก Garena ID &amp; Password แล้วกดปุ่มเริ่มทำงานได้เลย</span>
+              <span id="progressPercentText" class="mono-text">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressBarFill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Live Solved Chapters Stream -->
+          <div class="stream-split">
+            <div class="stream-panel">
+              <div class="panel-bar">
+                <span>🏆 บทเรียนที่ส่งคำตอบผ่านล่าสุด</span>
+                <span class="panel-count" id="solvedFeedCount">0 บท</span>
+              </div>
+              <div class="chapter-feed" id="liveChapterList">
+                <div class="empty-feed">เมื่อเริ่มรัน รายการบทเรียนและรางวัล Gold / Silver แต่ละบทจะแสดงแบบเรียลไทม์ที่นี่</div>
+              </div>
+            </div>
+
+            <div class="stream-panel">
+              <div class="panel-bar">
+                <span>📡 บันทึกการทำงานสด (Live Log)</span>
+                <button type="button" class="btn-xs btn-ghost" id="clearLogBtn">ล้างบันทึก</button>
+              </div>
+              <div class="console-box" id="consoleBox">
+                <div class="log-row log-info">[พร้อมทำงาน] ระบบเฉลยในตัวครบ 40 บท + Local Adaptive Solver พร้อมส่งคำตอบทันที</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ==================== TAB 2: HISTORY & 40-CHAPTER VAULT ==================== -->
+    <section id="tabPanelVault" class="tab-panel hidden" role="tabpanel">
+      <!-- Run History & CSV Export Card -->
+      <div class="card history-card">
+        <div class="card-header" style="flex-wrap: wrap;">
+          <div>
+            <span class="section-tag">RUN HISTORY &amp; CSV BLUEPRINT EXPORT</span>
+            <h2 class="card-title">ประวัติการส่งคำตอบ &amp; ดาวน์โหลดสรุประบบ (.csv)</h2>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/api/export/system-csv" class="btn-secondary" style="text-decoration: none;">📥 ดาวน์โหลดสรุประบบ (.csv)</a>
+            <a href="/api/export/answers-csv" class="btn-secondary" style="text-decoration: none;">📥 ดาวน์โหลดเฉลย 40 บท (.csv)</a>
+            <button type="button" class="btn-secondary btn-sm" id="refreshHistoryBtn">🔄 รีเฟรชข้อมูล</button>
+          </div>
+        </div>
+        <div id="historyList" class="history-list">
+          <div class="empty-feed">ยังไม่มีประวัติการรันในเซสชันนี้</div>
+        </div>
+      </div>
+
+      <!-- 40-Chapter Verified Answer Vault Card -->
+      <div class="card vault-card">
+        <div class="card-header vault-header">
+          <div>
+            <span class="section-tag">VERIFIED 40-CHAPTER DATABASE</span>
+            <h2 class="card-title">คลังเฉลย RoV Academy ทั้ง 40 บท (ยืนยันจากเซิร์ฟเวอร์ 100%)</h2>
+          </div>
+          <div class="vault-search-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              type="search"
+              id="vaultSearchInput"
+              class="text-input search-input"
+              placeholder="ค้นหาเลขบท (เช่น 30, 46, 70), คำถาม หรือคำตอบ..."
+            />
+          </div>
+        </div>
+        <div id="vaultList" class="vault-grid">
+          <div class="empty-feed">กำลังโหลดคลังเฉลยทั้ง 40 บท...</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
