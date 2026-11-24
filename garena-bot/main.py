@@ -908,6 +908,9 @@ class RoVAcademySession:
 # ============================================================================
 
 
+STATUS_WS_CLIENTS: Set[WebSocket] = set()
+
+
 class QueueWorkerManager:
     def __init__(self, worker_count: int = DEFAULT_WORKER_COUNT) -> None:
         self.worker_count = worker_count
@@ -952,6 +955,22 @@ class QueueWorkerManager:
                 dead.append(ws)
         for ws in dead:
             self.ws_subscribers.get(job_id, set()).discard(ws)
+
+        status_payload = {
+            "status": job.get("status", "running"),
+            "message": job.get("progress_label", ""),
+            "percent": job.get("percent", 0),
+            "summary": job.get("summary", {}),
+            "job": job,
+        }
+        dead_status: List[WebSocket] = []
+        for ws in list(STATUS_WS_CLIENTS):
+            try:
+                await ws.send_json(status_payload)
+            except Exception:
+                dead_status.append(ws)
+        for ws in dead_status:
+            STATUS_WS_CLIENTS.discard(ws)
 
     async def enqueue(self, garena_ids: List[str], base_url: str = DEFAULT_ROV_BASE_URL) -> Dict[str, Any]:
         job_id = uuid.uuid4().hex[:8]
@@ -1439,6 +1458,51 @@ async def get_active_job() -> Dict[str, Any]:
     return {"job": WORKER_MANAGER.get_active_or_latest(), "telemetry": WORKER_MANAGER.telemetry()}
 
 
+@app.post("/api/jobs/start")
+async def start_job_endpoint(payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    p = payload or {}
+    token_or_url = str(p.get("token_or_url") or p.get("jwt_token") or "").strip()
+    gid = str(p.get("garena_id") or "").strip()
+    proxy = str(p.get("proxy") or "").strip()
+    if token_or_url or gid:
+        mat = extract_auth_material(token_or_url or gid)
+        if mat["jwt_token"]:
+            upsert_account(
+                gid or f"uid_{inspect_jwt(mat['jwt_token']).get('uid') or 'rov'}",
+                jwt_token=mat["jwt_token"],
+                csrf_token=mat.get("csrf_token") or "",
+                proxy=proxy,
+            )
+        elif gid and not mat["jwt_token"]:
+            upsert_account(gid, proxy=proxy)
+
+    vault = load_accounts_vault()
+    selected_ids = [a["garena_id"] for a in vault["accounts"] if a.get("selected", True)]
+    if not selected_ids and vault["accounts"]:
+        selected_ids = [vault["accounts"][0]["garena_id"]]
+    if not selected_ids:
+        default_gid = gid or "rov_player"
+        upsert_account(default_gid, proxy=proxy, activate=True)
+        selected_ids = [default_gid]
+
+    job = await WORKER_MANAGER.enqueue(selected_ids, base_url=p.get("base_url") or DEFAULT_ROV_BASE_URL)
+    return {"ok": True, "job": job, "telemetry": WORKER_MANAGER.telemetry()}
+
+
+@app.post("/api/jobs/stop")
+async def stop_active_job_endpoint(payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    p = payload or {}
+    job_id = p.get("job_id")
+    if not job_id:
+        active = WORKER_MANAGER.get_active_or_latest()
+        if active:
+            job_id = active.get("job_id")
+    if not job_id:
+        return {"ok": True, "message": "No active job found"}
+    job = await WORKER_MANAGER.cancel(str(job_id))
+    return {"ok": True, "job": job}
+
+
 MOCK_TASKS: Dict[str, Dict[str, Any]] = {}
 _MOCK_TASK_REFS: Set[asyncio.Task[None]] = set()
 MOCK_STATES: Tuple[str, str, str, str] = ("queued", "logging_in", "testing", "done")
@@ -1586,3 +1650,41 @@ async def job_websocket(websocket: WebSocket, job_id: str) -> None:
         pass
     finally:
         WORKER_MANAGER.ws_subscribers.get(job_id, set()).discard(websocket)
+
+
+@app.websocket("/ws/status")
+async def general_status_websocket(websocket: WebSocket) -> None:
+    await websocket.accept()
+    STATUS_WS_CLIENTS.add(websocket)
+    try:
+        active = WORKER_MANAGER.get_active_or_latest()
+        if active:
+            await websocket.send_json({
+                "status": active.get("status", "idle"),
+                "message": active.get("progress_label", "พร้อมทำงาน"),
+                "percent": active.get("percent", 0),
+                "summary": active.get("summary", {}),
+                "job": active,
+            })
+        else:
+            await websocket.send_json({
+                "status": "idle",
+                "message": "พร้อมเริ่มงาน",
+                "percent": 0,
+            })
+        while True:
+            msg = await websocket.receive_text()
+            if msg == "ping":
+                await websocket.send_json({"type": "pong", "status": "online"})
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        STATUS_WS_CLIENTS.discard(websocket)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    server_port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=server_port, reload=False)
